@@ -1,14 +1,14 @@
 name: DoltHub Push
 
 on:
-  workflow_dispatch:  # Manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   push-to-dolthub:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout GitHub repo (not the Dolt repo)
+    - name: Checkout GitHub repo (this one)
       uses: actions/checkout@v3
 
     - name: Install Dolt (no sudo)
@@ -26,6 +26,16 @@ jobs:
         dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
       env:
         DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
+
+    - name: Debug creds file
+      run: |
+        echo "🔍 Decoded JWK contents:"
+        cat ~/.dolt/creds/dolt-ci.jwk
+        echo ""
+        echo "🔍 Validating with jq:"
+        jq . ~/.dolt/creds/dolt-ci.jwk || echo "❌ Invalid JSON"
+        echo "🔍 Dolt config:"
+        dolt config --list
 
     - name: Clone DoltHub repo
       run: |
