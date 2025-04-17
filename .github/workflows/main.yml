@@ -1,42 +1,74 @@
-name: Push to DoltHub
+name: Daily DoltHub Update
 
 on:
+  # allow manual triggers…
   workflow_dispatch:
+  # …and daily at midnight UTC
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
-  dolt-push:
+  update-and-push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout this repo
-      uses: actions/checkout@v3
+      # 1) grab your code (including update_dolt_data_3.py)
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install Dolt (no sudo)
-      run: |
-        curl -LO https://github.com/dolthub/dolt/releases/latest/download/dolt-linux-amd64.tar.gz
-        tar -xzf dolt-linux-amd64.tar.gz
-        echo "$PWD/dolt-linux-amd64/bin" >> $GITHUB_PATH
+      # 2) prepare Python and run your scraper
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
-    - name: Decode and activate credentials
-      run: |
-        mkdir -p ~/.dolt/creds
-        echo "$DOLT_CREDS_B64" | base64 --decode > ~/.dolt/creds/dolt-ci.jwk
-        
-        IMPORT_OUTPUT=$(dolt creds import ~/.dolt/creds/dolt-ci.jwk)
-        echo "$IMPORT_OUTPUT"
-        
-        CRED_ID=$(echo "$IMPORT_OUTPUT" | grep 'Imported credential' | awk '{print $3}')
-        echo "🧾 Using credential: $CRED_ID"
-        
-        dolt config --global --add user.name "ci-bot"
-        dolt config --global --add user.email "ci@bot.local"
-        dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
-        dolt creds use "$CRED_ID"
-      env:
-        DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
+      - name: Install Python dependencies
+        run: |
+          pip install requests
 
-    - name: Clone DoltHub repo
-      run: |
-        dolt clone btdb/DukaNews doltdir
-        cd doltdir
-        dolt status
+      - name: Run Dukascopy update script
+        run: |
+          python update_dolt_data_3.py
+
+      # 3) install Dolt CLI
+      - name: Install Dolt (no sudo)
+        run: |
+          curl -LO https://github.com/dolthub/dolt/releases/latest/download/dolt-linux-amd64.tar.gz
+          tar -xzf dolt-linux-amd64.tar.gz
+          echo "$PWD/dolt-linux-amd64/bin" >> $GITHUB_PATH
+
+      # 4) bring in your DoltHub credentials
+      - name: Decode and activate credentials
+        env:
+          DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
+        run: |
+          mkdir -p ~/.dolt/creds
+          echo "$DOLT_CREDS_B64" | base64 --decode > ~/.dolt/creds/dolt-ci.jwk
+          IMPORT_OUTPUT=$(dolt creds import ~/.dolt/creds/dolt-ci.jwk)
+          CRED_ID=$(echo "$IMPORT_OUTPUT" | grep 'Imported credential' | awk '{print $3}')
+          dolt config --global --add user.name "ci-bot"
+          dolt config --global --add user.email "ci@bot.local"
+          dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
+          dolt creds use "$CRED_ID"
+
+      # 5) clone your DoltHub repo
+      - name: Clone DoltHub repo
+        run: dolt clone btdb/DukaNews doltdir
+
+      # 6) import the new CSV, commit & push
+      - name: Import, commit and push
+        run: |
+          # copy in the newly-generated CSV
+          cp dukascopy_weekly_update.csv doltdir/
+          cd doltdir
+
+          # import into your table (update existing rows)
+          dolt table import -u economic_news dukascopy_weekly_update.csv
+
+          # stage & commit with today's date
+          dolt add .
+          TODAY=$(date -u +'%Y-%m-%d')
+          dolt commit -m "update of $TODAY"
+
+          # push back to DoltHub
+          dolt push origin main
