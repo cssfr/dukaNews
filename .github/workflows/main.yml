@@ -1,0 +1,32 @@
+name: DoltHub Push
+
+on:
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  push-to-dolthub:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Install Dolt
+      run: |
+        curl -L https://github.com/dolthub/dolt/releases/latest/download/install.sh | bash
+        echo "$HOME/.dolt/bin" >> $GITHUB_PATH
+
+    - name: Configure Dolt credentials
+      run: |
+        mkdir -p ~/.dolt/creds
+        echo "$DOLT_CREDS_B64" | base64 --decode > ~/.dolt/creds/dolt-ci.jwk
+        dolt config --global --add user.name "ci-bot"
+        dolt config --global --add user.email "ci@github.local"
+        dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
+      env:
+        DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
+
+    - name: Dolt status test
+      run: |
+        dolt version
+        dolt status
