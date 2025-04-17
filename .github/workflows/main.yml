@@ -26,11 +26,12 @@ jobs:
         dolt config --global --add user.name "ci-bot"
         dolt config --global --add user.email "ci@bot.local"
         dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
+        dolt creds check
       env:
         DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
 
     - name: Clone DoltHub repo
       run: |
-        dolt clone btdb/DukaNews
+        dolt clone btdb/DukaNews doltdir
         cd doltdir
         dolt status
