@@ -11,10 +11,12 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
-    - name: Install Dolt
+    - name: Install Dolt (no sudo)
       run: |
-        curl -L https://github.com/dolthub/dolt/releases/latest/download/install.sh | bash
-        echo "$HOME/.dolt/bin" >> $GITHUB_PATH
+        curl -LO https://github.com/dolthub/dolt/releases/latest/download/dolt-linux-amd64.tar.gz
+        tar -xzf dolt-linux-amd64.tar.gz
+        echo "$PWD/dolt-linux-amd64/bin" >> $GITHUB_PATH
+
 
     - name: Configure Dolt credentials
       run: |
