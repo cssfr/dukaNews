@@ -21,10 +21,10 @@ jobs:
       run: |
         mkdir -p ~/.dolt/creds
         echo "$DOLT_CREDS_B64" | base64 --decode > ~/.dolt/creds/dolt-ci.jwk
-        CRED_ID=$(dolt creds import ~/.dolt/creds/dolt-ci.jwk | grep 'Imported credential' | awk '{print $3}')
-        echo "$DOLT_CREDS_B64" | base64 --decode > ~/.dolt/creds/dolt-ci.jwk
+        
         IMPORT_OUTPUT=$(dolt creds import ~/.dolt/creds/dolt-ci.jwk)
         echo "$IMPORT_OUTPUT"
+        
         CRED_ID=$(echo "$IMPORT_OUTPUT" | grep 'Imported credential' | awk '{print $3}')
         echo "🧾 Using credential: $CRED_ID"
         
@@ -32,7 +32,6 @@ jobs:
         dolt config --global --add user.email "ci@bot.local"
         dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
         dolt creds use "$CRED_ID"
-        dolt creds check
       env:
         DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
 
