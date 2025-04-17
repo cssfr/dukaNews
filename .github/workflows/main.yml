@@ -31,6 +31,6 @@ jobs:
 
     - name: Clone DoltHub repo
       run: |
-        dolt clone cssfr/economic_news doltdir
+        dolt clone btdb/DukaNews
         cd doltdir
         dolt status
