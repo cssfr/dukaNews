@@ -18,16 +18,16 @@ jobs:
         echo "$PWD/dolt-linux-amd64/bin" >> $GITHUB_PATH
 
     - name: Decode and activate credentials
-        run: |
-          mkdir -p ~/.dolt/creds
-          echo "$DOLT_CREDS_B64" | base64 --decode > ~/.dolt/creds/dolt-ci.jwk
-          CRED_ID=$(dolt creds import ~/.dolt/creds/dolt-ci.jwk | grep 'Imported credential' | awk '{print $3}')
-          dolt creds use "$CRED_ID"
-          dolt config --global --add user.name "ci-bot"
-          dolt config --global --add user.email "ci@bot.local"
-          dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
-        env:
-          DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
+      run: |
+        mkdir -p ~/.dolt/creds
+        echo "$DOLT_CREDS_B64" | base64 --decode > ~/.dolt/creds/dolt-ci.jwk
+        CRED_ID=$(dolt creds import ~/.dolt/creds/dolt-ci.jwk | grep 'Imported credential' | awk '{print $3}')
+        dolt creds use "$CRED_ID"
+        dolt config --global --add user.name "ci-bot"
+        dolt config --global --add user.email "ci@bot.local"
+        dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
+      env:
+        DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
 
     - name: Clone DoltHub repo
       run: |
