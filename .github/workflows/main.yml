@@ -27,11 +27,11 @@ jobs:
         echo "$IMPORT_OUTPUT"
         CRED_ID=$(echo "$IMPORT_OUTPUT" | grep 'Imported credential' | awk '{print $3}')
         echo "🧾 Using credential: $CRED_ID"
-        dolt creds use "$CRED_ID"
+        
         dolt config --global --add user.name "ci-bot"
         dolt config --global --add user.email "ci@bot.local"
         dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
-        dolt creds use 8fvplhovlh88ue798s32k3qsongfc1h8su4v2hu7put1e
+        dolt creds use "$CRED_ID"
         dolt creds check
       env:
         DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
