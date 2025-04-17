@@ -1,14 +1,14 @@
 name: DoltHub Push
 
 on:
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:  # Manual trigger from GitHub UI
 
 jobs:
   push-to-dolthub:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout GitHub repo (not the Dolt repo)
       uses: actions/checkout@v3
 
     - name: Install Dolt (no sudo)
@@ -16,7 +16,6 @@ jobs:
         curl -LO https://github.com/dolthub/dolt/releases/latest/download/dolt-linux-amd64.tar.gz
         tar -xzf dolt-linux-amd64.tar.gz
         echo "$PWD/dolt-linux-amd64/bin" >> $GITHUB_PATH
-
 
     - name: Configure Dolt credentials
       run: |
@@ -28,7 +27,8 @@ jobs:
       env:
         DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
 
-    - name: Dolt status test
+    - name: Clone DoltHub repo
       run: |
-        dolt version
+        dolt clone dolthub/cssfr/economic_news doltdir
+        cd doltdir
         dolt status
