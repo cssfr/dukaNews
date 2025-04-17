@@ -1,14 +1,14 @@
-name: DoltHub Push
+name: Push to DoltHub
 
 on:
   workflow_dispatch:
 
 jobs:
-  push-to-dolthub:
+  dolt-push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout GitHub repo
+    - name: Checkout this repo
       uses: actions/checkout@v3
 
     - name: Install Dolt (no sudo)
@@ -17,25 +17,20 @@ jobs:
         tar -xzf dolt-linux-amd64.tar.gz
         echo "$PWD/dolt-linux-amd64/bin" >> $GITHUB_PATH
 
-    - name: Decode and import Dolt credentials
+    - name: Decode and activate credentials
       run: |
         mkdir -p ~/.dolt/creds
-        echo "$DOLT_CREDS_B64" | base64 --decode > dolt-ci.jwk
-        dolt creds import dolt-ci.jwk
+        echo "$DOLT_CREDS_B64" | base64 --decode > ~/.dolt/creds/dolt-ci.jwk
+        dolt creds import ~/.dolt/creds/dolt-ci.jwk
+        dolt creds use $(basename ~/.dolt/creds/dolt-ci.jwk .jwk)
+        dolt config --global --add user.name "ci-bot"
+        dolt config --global --add user.email "ci@bot.local"
+        dolt config --global --add user.creds ~/.dolt/creds/dolt-ci.jwk
       env:
         DOLT_CREDS_B64: ${{ secrets.DOLT_CREDS_B64 }}
 
-    - name: Verify .jwk file size and contents
-      run: |
-        echo "🔍 Decoded JWK byte size:"
-        wc -c < dolt-ci.jwk
-        echo "🔍 Installed creds:"
-        ls -l ~/.dolt/creds/
-        echo "🔍 Dolt config:"
-        dolt config --list
-
     - name: Clone DoltHub repo
       run: |
-        dolt clone dolthub/cssfr/economic_news doltdir
+        dolt clone cssfr/economic_news doltdir
         cd doltdir
         dolt status
