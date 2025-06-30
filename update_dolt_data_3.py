@@ -146,7 +146,7 @@ def write_csv(events, output_csv):
 
 def main():
     now = datetime.now(timezone.utc)
-    start_date = now - timedelta(days=7)
+    start_date = now - timedelta(days=28)
     end_date = now + timedelta(days=14)
 
     print(f"Fetching events from {start_date.date()} to {end_date.date()} (UTC)...")
