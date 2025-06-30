@@ -74,7 +74,8 @@ jobs:
           dolt push origin main
     
   workflow-keepalive:
-    if: github.event_name == 'schedule'
+    # if: github.event_name == 'schedule'
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     permissions:
       actions: write
